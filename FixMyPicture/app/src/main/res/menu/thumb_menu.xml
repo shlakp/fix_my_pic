@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/enlarge_picture"
+        android:title="@string/enlarge_picture" />
+    <item android:id="@+id/solve_puzzle"
+        android:title="@string/solve_puzzle" />
+    <item android:id="@+id/show_fact"
+        android:title="@string/show_random_fact_about_me" />
+</menu>

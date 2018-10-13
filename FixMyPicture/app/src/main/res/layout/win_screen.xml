@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_5">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="40sp"
+        android:text="@string/level"
+        android:gravity="center"
+        android:textStyle="bold"
+        android:id="@+id/win_screen_level"
+        />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="30sp"
+        android:text="2:00:00"
+        android:gravity="center"
+        android:textStyle="bold"
+        android:id="@+id/win_screen_time"
+        android:layout_below="@+id/win_screen_level"
+        />
+
+    <ImageView
+        android:layout_width="300sp"
+        android:layout_height="300sp"
+        android:layout_marginTop="40sp"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/squares_animation"
+        android:layout_below="@+id/win_screen_time"
+        android:id="@+id/win_image"
+        />
+
+    <ImageView
+        android:layout_width="300sp"
+        android:layout_height="300sp"
+        android:layout_marginTop="40sp"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/win_text_animation"
+        android:layout_below="@+id/win_screen_time"
+        android:layout_alignParentTop="true"
+        android:id="@+id/win_image_txt"
+        />
+
+    <TextView
+        android:layout_centerHorizontal="true"
+        android:layout_width="300sp"
+        android:layout_height="40sp"
+        android:id="@+id/win_screen_space"
+        android:layout_below="@+id/win_image"
+        android:background="@color/black"
+        android:textColor="@color/white"
+        android:alpha="0.9"
+        android:gravity="center"
+        />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/win_screen_space"
+        android:gravity="center"
+        >
+
+        <Button
+            android:layout_width="140sp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/continue_btn"
+            android:id="@+id/win_screen_continue"
+            />
+        <FrameLayout
+            android:layout_width="20sp"
+            android:layout_height="wrap_content"></FrameLayout>
+        <Button
+            android:layout_width="140sp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/main_menu"
+            android:id="@+id/back_to_main_win_screen"
+            />
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity"
+    android:layout_gravity="center"
+    android:background="@drawable/background_1"
+    >
+ <FrameLayout
+     android:layout_width="match_parent"
+     android:layout_height="0sp"
+     android:layout_weight="0.5">
+     <ImageView
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:src="@drawable/log_bw"
+         android:layout_marginLeft="40sp"/>
+ </FrameLayout>
+ <RelativeLayout
+     android:layout_width="match_parent"
+     android:layout_height="0sp"
+     android:layout_weight="0.2"
+     android:layout_gravity="center">
+
+     <ImageButton
+
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:id="@+id/story_continue_btn"
+         android:layout_marginHorizontal="40sp"
+         android:src="@drawable/button_main_seslector"
+         />
+     <TextView
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:gravity="center"
+         android:textColor="@color/white"
+         android:text="@string/continue_game"/>
+
+ </RelativeLayout>
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="0sp"
+    android:layout_weight="0.2"
+    android:layout_gravity="center">
+
+    <ImageButton
+
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/story_new_game"
+        android:layout_marginHorizontal="40sp"
+        android:src="@drawable/button_main_seslector"
+        />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:text="@string/new_game"/>
+
+</RelativeLayout>
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="0sp"
+    android:layout_weight="0.2"
+    android:layout_gravity="center">
+
+    <ImageButton
+
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/play_btn"
+        android:layout_marginHorizontal="40sp"
+        android:src="@drawable/button_main_seslector"
+        />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:text="@string/free_mode_game"/>
+
+</RelativeLayout>
+ <FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="0sp"
+    android:layout_weight="0.6">
+</FrameLayout>
+</LinearLayout>
