@@ -6,11 +6,8 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
 import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
@@ -20,6 +17,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.ActionMode;
+import android.util.Log;
 import android.view.DragEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,230 +30,67 @@ import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import hit.android.fixmypicture.data.Level;
+import hit.android.fixmypicture.data.LevelProgressionManager;
+import hit.android.fixmypicture.data.LevelsContainer;
+
 public class PlayScreen extends AppCompatActivity {
+    public static final String INTENT_LEVEL_TIME = "lvl_time" ;
+
     private GridLayout gameBoard;
     private GameTile[][] picSlices;
     private MediaPlayer bgmPlayer;
-    private int dimension;
-    private Integer picId;
-    private Integer bgmId;
+    private int dimension ;
     private int timeElapsed;
-    private String curLvlName ;
 
-    private LevelSettings curLevel ;
+    LevelProgressionManager levelProgressionManager;
 
-    private LevelsContainer levelsObj ;
-    private HashMap<String, ArrayList<LevelSettings>> levels ;
-    private SharedPreferences sp ;
-    private int currentPuzzle ;
-    private int currentLevelIdx ;
+    private Level curLevel ;
+    private LevelsContainer levelsContainer ;
     private String calledBy ;
-    private String displayedFact;
+
     private Animator mCurrentAnimator;
     private int mShortAnimationDuration;
     private ActionMode mActionMode;
     private AlertDialog alert;
-    private ArrayList<String> picFacts;
-
-    private void setNextLevelAttributes() {
-        if (calledBy.equals(MainActivity.CALLED_BY_STORY_MESSAGE)) {
-            curLevel = getCurLevel();
-            picFacts = curLevel.getPicFacts();
-            curLvlName = curLevel.getName();
-            picId = curLevel.getPicId();
-            dimension = curLevel.getDimension();
-        }
-        else if (calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME)) {
-            curLvlName = getIntent().getStringExtra(MainActivity.INTENT_CURR_LEVEL_NAME);
-            picId = getIntent().getIntExtra(MainActivity.INTENT_PIC_ID, 0);
-            dimension = getIntent().getIntExtra(MainActivity.INTENT_DIMENSION, 0);
-            picFacts = getIntent().getStringArrayListExtra(MainActivity.FACTS_ARRAY);
-        }
-    }
-
-    private int checkBestScore() {
-        int curPzl = currentPuzzle ;
-        if (calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME)) {
-            curPzl -= 1 ;
-        }
-
-        String[] levelsProgression = levelsObj.getLevelsProgression() ;
-        if (calledBy.equals(MainActivity.CALLED_BY_STORY_MESSAGE)) {
-            if (!levels.get(levelsProgression[currentLevelIdx]).get(curPzl).getPassed()) {
-                levels.get(levelsProgression[currentLevelIdx]).get(curPzl).setTopScore(timeElapsed);
-                levelsObj.updateLevels();
-                return timeElapsed;
-            }
-        }
-
-        int curTop = levels.get(levelsProgression[currentLevelIdx]).get(curPzl).getTopScore();
-
-        if (curTop < timeElapsed) {
-
-            return curTop ;
-        }
-        levels.get(levelsProgression[currentLevelIdx]).get(curPzl).setTopScore(timeElapsed);
-        levelsObj.updateLevels();
-        return timeElapsed ;
-    }
-
-    private void setPassed() {
-        String[] levelsProgression = levelsObj.getLevelsProgression() ;
-        levels.get(levelsProgression[currentLevelIdx]).get(currentPuzzle).setPassed(true);
-    }
-
-    private LevelSettings getCurLevel() {
-        String[] levelsProgression = levelsObj.getLevelsProgression() ;
-        return levels.get(levelsProgression[currentLevelIdx]).get(currentPuzzle) ;
-    }
-
-    private void updateSharedPrefference() {
-        if (currentPuzzle == 5) {
-            currentPuzzle = 0 ;
-            currentLevelIdx++ ;
-        }
-        else {
-            currentPuzzle++ ;
-        }
-        SharedPreferences.Editor editor = sp.edit() ;
-        editor.putInt(MainActivity.SP_CURR_PUZZLE, currentPuzzle) ;
-        editor.putInt(MainActivity.SP_CURR_LEVEL_IDX, currentLevelIdx) ;
-        editor.apply();
-    }
-
-    private void handleWin() {
-        Intent intent = new Intent(getBaseContext(), WinScreen.class);
-        intent.putExtra(MainActivity.INTENT_LEVEL_TIME, timeElapsed) ;
-        intent.putExtra(MainActivity.INTENT_CURR_LEVEL_NAME, curLvlName) ;
-        intent.putExtra(MainActivity.INTENT_DIMENSION, dimension) ;
-        intent.putExtra(MainActivity.INTENT_PIC_ID, picId) ;
-
-        int bestLvlScore = checkBestScore() ;
-        intent.putExtra(MainActivity.INTENT_TOP_SCORE, bestLvlScore) ;
-        if (calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME)) {
-            intent.putExtra(MainActivity.INTENT_CALLED_BY, MainActivity.CALLED_BY_STORY_FREE_GAME) ;
-            startActivity(intent);
-        }
-        else if (calledBy.equals(MainActivity.CALLED_BY_STORY_MESSAGE)) {
-            setPassed();
-            updateSharedPrefference();
-            intent.putExtra(MainActivity.INTENT_CALLED_BY, MainActivity.CALLED_BY_STORY_MESSAGE) ;
-            levelsObj.updateLevels();
-            startActivity(intent);
-        }
-    }
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //TODO: move to method
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getSupportActionBar().hide();
+
         setContentView(R.layout.activity_play_screen);
 
-        levelsObj = LevelsContainer.getInstance(this);
-        levels = levelsObj.getLevelContainer();
-        sp = getSharedPreferences(MainActivity.SP_CURR_USER_PREF_NAME, Context.MODE_PRIVATE) ;
-        currentPuzzle = sp.getInt(MainActivity.SP_CURR_PUZZLE, 0) ;
-        currentLevelIdx = sp.getInt(MainActivity.SP_CURR_LEVEL_IDX, 0) ;
 
+        levelsContainer = LevelsContainer.getInstance(this);
+        levelProgressionManager = new LevelProgressionManager(this) ;
+        int currentPuzzle = levelProgressionManager.getWorkingPuzzle() ;
+        int currentPage = levelProgressionManager.getWorkingPage() ;
+        curLevel = getLevelsSettings(currentPage, currentPuzzle) ;
         calledBy = getIntent().getStringExtra(MainActivity.INTENT_CALLED_BY) ;
-        if(calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME))
-        {
-            currentPuzzle = getIntent().getIntExtra(MainActivity.INTENT_CURR_LEVEL_IDX,currentPuzzle);
-            currentLevelIdx = getIntent().getIntExtra(MainActivity.INTENT_CURR_LEVEL_PROGRESSION,currentLevelIdx);
-        }
-        setNextLevelAttributes() ;
-
-        bgmId = R.raw.tropical_bgm;
-
+        dimension = curLevel.getDimension() ;
+        //Set level name text
         TextView lvlName = findViewById(R.id.lvl_name) ;
-        String s = getResources().getString(R.string.level) +  " " + curLvlName ;
+        String s = getResources().getString(R.string.level) +  " " + curLevel.getName() ;
         lvlName.setText(s);
 
+        //Set picture for puzzle
         ImageView fullPicture = findViewById(R.id.full_picture);
-        if(picId != 0)
+        if(curLevel.getPicId() != 0)
         {
-            fullPicture.setImageResource(picId);
+            fullPicture.setImageResource(curLevel.getPicId());
         }
         gameBoard = findViewById(R.id.GameBoard);
         gameBoard.setColumnCount(dimension);
         gameBoard.setRowCount(dimension);
-        gameBoard.setOnDragListener(new View.OnDragListener() {
-            @Override
-            public boolean onDrag(View v, DragEvent event) {
-                final View view = (View) event.getLocalState();
-                GameTile currnetTile = (GameTile)view;
-                final int index ;
+        picSlices = splitBitmap(BitmapFactory.decodeResource(getResources(), curLevel.getPicId()), dimension, dimension);
 
-                switch (event.getAction()) {
-                    case DragEvent.ACTION_DRAG_LOCATION:
-                        // do nothing if hovering above own position
-                        if (view == v) return true;
-                        break;
-                    case DragEvent.ACTION_DROP:
-
-                        index = calculateNewIndex(event.getX(), event.getY());
-                        int x = index % gameBoard.getRowCount() ;
-                        int y = index / gameBoard.getRowCount() ;
-                        // Check drop target is empty tile and that delta between drop target and tile is legal
-                        // arrange matrix accordingly
-                        if (picSlices[x][y].isEmptyTile() &&
-                                (
-                                        ( (currnetTile.getCurrentXCord() - x) >= -1  &&  (currnetTile.getCurrentXCord() - x) <= 1 && (currnetTile.getCurrentYCord() - y) == 0 )
-                                                ||
-                                                ( (currnetTile.getCurrentYCord() - y) >= -1  &&  (currnetTile.getCurrentYCord() - y) <= 1 && (currnetTile.getCurrentXCord() - x) == 0 )
-                                ))
-                        {
-                            GameTile tmp = picSlices[x][y] ;
-                            picSlices[x][y] = currnetTile ;
-                            picSlices[currnetTile.getCurrentXCord()][currnetTile.getCurrentYCord()] = tmp ;
-                        }
-                        if(view != null)
-                        {
-                            drawBoard();
-                            view.setVisibility(View.VISIBLE);
-                        }
-                        break;
-                    case DragEvent.ACTION_DRAG_ENDED:
-                        if (!event.getResult()) {
-                            view.setVisibility(View.VISIBLE);
-                        }
-                        break;
-                }
-                return true ;
-            }
-            private int calculateNewIndex(float x, float y) {
-                // calculate which column to move to
-                final float cellWidth = gameBoard.getWidth() / gameBoard.getColumnCount();
-                final int column = (int)(x / cellWidth);
-
-                // calculate which row to move to
-                final float cellHeight = gameBoard.getHeight() / gameBoard.getRowCount();
-                final int row = (int)Math.floor(y / cellHeight);
-
-                // the items in the GridLayout is organized as a wrapping list
-                // and not as an actual grid, so this is how to get the new index
-                int index = row * gameBoard.getColumnCount() + column;
-                if (index >= gameBoard.getChildCount()) {
-                    index = gameBoard.getChildCount() - 1;
-                }
-
-                return index;
-            }
-        });
-        if(picId != null)
-        {
-            picSlices = splitBitmap(BitmapFactory.decodeResource(getResources(), picId), dimension, dimension);
-        }
         randomizeBoard();
         drawBoard();
         assignTiles();
@@ -263,11 +98,40 @@ public class PlayScreen extends AppCompatActivity {
         mShortAnimationDuration = getResources().getInteger(
                 android.R.integer.config_shortAnimTime);
 
-
-        bgmPlayer = MediaPlayer.create(PlayScreen.this, bgmId);
+        bgmPlayer = MediaPlayer.create(PlayScreen.this, R.raw.tropical_bgm);
         bgmPlayer.start();
-        handleTutorial();
     }
+
+    private Level getLevelsSettings(int pageId, int lvlId) {
+        return levelsContainer.getLevelContainer().get(pageId).getLevel(lvlId) ;
+    }
+
+    private int checkBestScore() {
+        int curTop = curLevel.getTopScore();
+        if (curTop < timeElapsed) {
+            return curTop ;
+        }
+        curLevel.setTopScore(timeElapsed);
+        levelsContainer.updateLevels();
+        return timeElapsed ;
+    }
+
+    private void setPassed() {
+        curLevel.setPassed(true);
+        levelsContainer.updateLevels();
+    }
+
+    private void handleWin() {
+        checkBestScore() ;
+        setPassed();
+        Intent intent = new Intent(getBaseContext(), WinScreen.class);
+        intent.putExtra(INTENT_LEVEL_TIME, timeElapsed) ;
+        intent.putExtra(MainActivity.INTENT_CALLED_BY, calledBy) ;
+        startActivity(intent);
+    }
+
+
+
 
     private void solvePuzzle()
     {
@@ -305,25 +169,53 @@ public class PlayScreen extends AppCompatActivity {
         handler.postDelayed(r, 1000);
     }
 
+    private void moveToFreeTile(GameTile tile)
+    {
+        if(tile.isEmptyTile())
+        {
+            return;
+        }
+        int XCord = tile.getCurrentXCord();
+        int YCord = tile.getCurrentYCord();
+        GameTile other;
+
+        if(XCord < dimension - 1 && picSlices[XCord + 1][YCord] != null && picSlices[XCord + 1][YCord].isEmptyTile())
+        {
+            other = picSlices[XCord + 1][YCord];
+            picSlices[XCord + 1][YCord] = tile;
+            picSlices[XCord][YCord] = other;
+        }
+        else if(YCord < dimension - 1 && picSlices[XCord][YCord + 1] != null && picSlices[XCord][YCord + 1].isEmptyTile())
+        {
+            other = picSlices[XCord][YCord + 1];
+            picSlices[XCord][YCord + 1] = tile;
+            picSlices[XCord][YCord] = other;
+        }
+        else if (XCord > 0 && picSlices[XCord - 1][YCord] != null && picSlices[XCord - 1][YCord].isEmptyTile())
+        {
+            other = picSlices[XCord - 1][YCord];
+            picSlices[XCord - 1][YCord] = tile;
+            picSlices[XCord][YCord] = other;
+        }
+        else if(YCord > 0 && picSlices[XCord ][YCord - 1] != null && picSlices[XCord][YCord - 1].isEmptyTile())
+        {
+            other = picSlices[XCord ][YCord - 1];
+            picSlices[XCord ][YCord - 1] = tile;
+            picSlices[XCord][YCord] = other;
+        }
+        drawBoard();
+    }
+
     private void assignTiles()
     {
         for(int i=0;i<gameBoard.getChildCount();i++)
         {
             final GameTile tile = (GameTile)gameBoard.getChildAt(i);
-            tile.setOnTouchListener(new View.OnTouchListener() {
+            tile.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public boolean onTouch(View view, MotionEvent motionEvent) {
-                    if (!tile.isEmptyTile() && motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        ClipData data = ClipData.newPlainText("", "");
-                        View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(
-                                view);
-                        view.startDrag(data, shadowBuilder, view, 0);
-                        view.setVisibility(View.INVISIBLE);
+                public void onClick(View view) {
+                    moveToFreeTile((GameTile)view);
 
-                        return true;
-                    } else {
-                        return false;
-                    }
                 }
             });
         }
@@ -706,32 +598,13 @@ public class PlayScreen extends AppCompatActivity {
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.enlarge_picture:
-                        zoomImageFromThumb(findViewById(R.id.full_picture), picId);
+                        zoomImageFromThumb(findViewById(R.id.full_picture), curLevel.getPicId());
                         return true;
                     case R.id.solve_puzzle:
                         solvePuzzle();
                         drawBoard();
                         return true;
                     case R.id.show_fact:
-                        alert = new AlertDialog.Builder(PlayScreen.this).create();
-                        Random rand = new Random();
-                        String factIndex  = picFacts.get(rand.nextInt(picFacts.size()));
-                        displayedFact = levelsObj.getPicsFacts().get(factIndex);
-                        final TextView input = new TextView(PlayScreen.this);
-                        input.setText(displayedFact);
-                        input.setOnLongClickListener(new View.OnLongClickListener() {
-                            @Override
-                            public boolean onLongClick(View view) {
-                                if(mActionMode != null)
-                                {
-                                    return false;
-                                }
-                                mActionMode = startSupportActionMode(mActionModeCallback);
-                                return true;
-                            }
-                        });
-                        alert.setView(input);
-                        alert.show();
                         return true;
                     default:
                         return false;
@@ -764,19 +637,19 @@ public class PlayScreen extends AppCompatActivity {
             switch (menuItem.getItemId())
             {
                 case R.id.copy_fact:
-                    ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                    ClipData clip = ClipData.newPlainText(getString(R.string.random_fact), displayedFact);
-                    clipboard.setPrimaryClip(clip);
-                    Toast.makeText(getApplicationContext(), R.string.text_copied,Toast.LENGTH_SHORT).show();
-                    actionMode.finish();
+//                    ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+//                    ClipData clip = ClipData.newPlainText(getString(R.string.random_fact), displayedFact);
+//                    clipboard.setPrimaryClip(clip);
+//                    Toast.makeText(getApplicationContext(), R.string.text_copied,Toast.LENGTH_SHORT).show();
+//                    actionMode.finish();
                     return true;
                 case R.id.share_fact:
-                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                    shareIntent.setType("text/plain");
-                    shareIntent.putExtra(Intent.EXTRA_TEXT,displayedFact);
-                    shareIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.interesting_fact));
-                    startActivity(Intent.createChooser(shareIntent, getString(R.string.share_with_friend)));
-                    actionMode.finish();
+//                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
+//                    shareIntent.setType("text/plain");
+//                    shareIntent.putExtra(Intent.EXTRA_TEXT,displayedFact);
+//                    shareIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.interesting_fact));
+//                    startActivity(Intent.createChooser(shareIntent, getString(R.string.share_with_friend)));
+//                    actionMode.finish();
                     return true;
                     default:
                         return false;

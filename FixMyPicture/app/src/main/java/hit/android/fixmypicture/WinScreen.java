@@ -11,14 +11,95 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import hit.android.fixmypicture.data.Level;
+import hit.android.fixmypicture.data.LevelProgressionManager;
+import hit.android.fixmypicture.data.LevelsContainer;
+
 
 public class WinScreen extends AppCompatActivity {
-    private String levelName ;
-    private int winTime ;
-    private int picId ;
-    private int dimension ;
     private String calledBy ;
-    private int bestScore ;
+    private LevelsContainer levelsContainer ;
+    private Level curLevel ;
+    private LevelProgressionManager currentLevelID ;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getSupportActionBar().hide();
+        setContentView(R.layout.win_screen);
+
+
+        currentLevelID = new LevelProgressionManager(this) ;
+        levelsContainer = LevelsContainer.getInstance(this) ;
+        calledBy = getIntent().getStringExtra(MainActivity.INTENT_CALLED_BY) ;
+        curLevel = levelsContainer.getLevel(currentLevelID.getWorkingPage(), currentLevelID.getWorkingPuzzle()) ;
+
+
+        String levelName = curLevel.getName() ;
+        int bestScore = curLevel.getTopScore() ;
+        int lvlWinTime = getIntent().getIntExtra(PlayScreen.INTENT_LEVEL_TIME, 0) ;
+
+
+        TextView levelNameView = findViewById(R.id.win_screen_level) ;
+        String levelString = getResources().getString(R.string.level) +  " " + levelName ;
+        levelNameView.setText(levelString);
+
+        TextView levelTime = findViewById(R.id.win_screen_time) ;
+        String timeString = secondsToString(lvlWinTime) ;
+        levelTime.setText(timeString);
+
+
+        TextView bestScoreView = findViewById(R.id.win_screen_space) ;
+        String bestScoreTxt =  getResources().getString(R.string.best_score) + secondsToString(bestScore);
+        bestScoreView.setText(bestScoreTxt);
+
+        Button backToMain = findViewById(R.id.back_to_main_win_screen) ;
+        backToMain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent ;
+                if (calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME)) {
+                    intent = new Intent(getBaseContext(), FreeModeScreen.class);
+                    startActivity(intent);
+                }
+                else if (calledBy.equals(MainActivity.CALLED_BY_STORY_MESSAGE)) {
+                    if (currentLevelID.incrementLevel()) {
+                        currentLevelID.saveCurrentLevelToPersistent();
+                    }
+
+                    intent = new Intent(getBaseContext(), MainActivity.class);
+                    startActivity(intent);
+                }
+
+            }
+        });
+
+        Button continueButton = findViewById(R.id.win_screen_continue) ;
+        continueButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(calledBy.equals(MainActivity.CALLED_BY_STORY_MESSAGE)) {
+                    Intent intent = new Intent(getBaseContext(), PlayScreen.class);
+                    intent.putExtra(MainActivity.INTENT_CALLED_BY, calledBy) ;
+                    currentLevelID.incrementLevel() ;
+                    startActivity(intent);
+                }
+                else if (calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME)) {
+                    Intent intent = new Intent(getBaseContext(), FreeModeScreen.class);
+                    intent.putExtra(MainActivity.INTENT_CALLED_BY, calledBy) ;
+                    startActivity(intent);
+                }
+            }
+        });
+
+        MediaPlayer player = MediaPlayer.create(this,R.raw.victory);
+        player.start();
+    }
+
     private String addZero(int t) {
         String res = Integer.toString(t) ;
         if (t / 10 == 0) {
@@ -34,73 +115,6 @@ public class WinScreen extends AppCompatActivity {
         return " " + addZero(hours) + ":" + addZero(minutes) + ":" + addZero(seconds) ;
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getSupportActionBar().hide();
-        setContentView(R.layout.win_screen);
-        TextView levelNameView = findViewById(R.id.win_screen_level) ;
-        TextView levelTime = findViewById(R.id.win_screen_time) ;
-        levelName = getIntent().getStringExtra(MainActivity.INTENT_CURR_LEVEL_NAME) ;
-        winTime = getIntent().getIntExtra(MainActivity.INTENT_LEVEL_TIME, 0) ;
-        calledBy = getIntent().getStringExtra(MainActivity.INTENT_CALLED_BY) ;
-        dimension = getIntent().getIntExtra(MainActivity.INTENT_DIMENSION, 0) ;
-        picId = getIntent().getIntExtra(MainActivity.INTENT_PIC_ID, 0) ;
-        bestScore = getIntent().getIntExtra(MainActivity.INTENT_TOP_SCORE, 0) ;
-
-        String levelString = getResources().getString(R.string.level) +  " " + levelName ;
-        levelNameView.setText(levelString);
-
-        String timeString = secondsToString(winTime) ;
-        levelTime.setText(timeString);
-
-
-        TextView bestScoreView = findViewById(R.id.win_screen_space) ;
-        String bestScoreTxt =  getResources().getString(R.string.best_score) + secondsToString(bestScore);
-
-        bestScoreView.setText(bestScoreTxt);
-
-        Button backToMain = findViewById(R.id.back_to_main_win_screen) ;
-        backToMain.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent ;
-                if (calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME)) {
-                    intent = new Intent(getBaseContext(), FreeModeScreen.class);
-                    startActivity(intent);
-                }
-                else if (calledBy.equals(MainActivity.CALLED_BY_STORY_MESSAGE)) {
-                    intent = new Intent(getBaseContext(), MainActivity.class);
-                    startActivity(intent);
-                }
-
-            }
-        });
-        Button continueButton = findViewById(R.id.win_screen_continue) ;
-        continueButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(calledBy.equals(MainActivity.CALLED_BY_STORY_MESSAGE)) {
-                    Intent intent = new Intent(getBaseContext(), PlayScreen.class);
-                    intent.putExtra(MainActivity.INTENT_PIC_ID, picId);
-                    intent.putExtra(MainActivity.INTENT_DIMENSION, dimension);
-                    intent.putExtra(MainActivity.INTENT_CALLED_BY, MainActivity.CALLED_BY_STORY_MESSAGE) ;
-                    intent.putExtra(MainActivity.INTENT_CURR_LEVEL_NAME, levelName) ;
-                    startActivity(intent);
-                }
-                else if (calledBy.equals(MainActivity.CALLED_BY_STORY_FREE_GAME)) {
-                    Intent intent = new Intent(getBaseContext(), FreeModeScreen.class);
-                    intent.putExtra(MainActivity.INTENT_CALLED_BY, MainActivity.CALLED_BY_STORY_FREE_GAME) ;
-                    startActivity(intent);
-                }
-            }
-        });
-
-        MediaPlayer player = MediaPlayer.create(this,R.raw.victory);
-        player.start();
-    }
     @Override
     public void onBackPressed() {
     }

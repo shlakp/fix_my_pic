@@ -1,15 +1,15 @@
-package hit.android.fixmypicture;
+package hit.android.fixmypicture.data;
 
 import java.util.ArrayList;
 
-public class LevelSettings {
+public class Level {
 
     private String name;
     private int dimension;
     private int picId;
     private int topScore;
     private Boolean isPassed;
-    private ArrayList<String> picFacts;
+
 
 
     public void setPassed(Boolean isPassed) {
@@ -52,11 +52,4 @@ public class LevelSettings {
         this.topScore = topScore;
     }
 
-    public ArrayList<String> getPicFacts() {
-        return picFacts;
-    }
-
-    public void setPicFacts(ArrayList<String> picFacts) {
-        this.picFacts = picFacts;
-    }
 }
